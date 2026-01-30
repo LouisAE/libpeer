@@ -19,7 +19,7 @@ endif()
 project(peer)
 
 option(ENABLE_TESTS "Enable tests" OFF)
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(ADDRESS_SANITIZER "Build with AddressSanitizer." OFF)
 option(MEMORY_SANITIZER "Build with MemorySanitizer." OFF)
 option(THREAD_SANITIZER "Build with ThreadSanitizer." OFF)
@@ -61,8 +61,22 @@ endif()
 
 add_definitions("-Wunused-variable -Werror=sequence-point -Werror=pointer-sign -Werror=return-type -Werror=sizeof-pointer-memaccess -Wincompatible-pointer-types -DHTTP_DO_NOT_USE_CUSTOM_CONFIG -DMQTT_DO_NOT_USE_CUSTOM_CONFIG")
 
+# 启用mbedtls的SRTP功能
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMBEDTLS_SSL_DTLS_SRTP")
+
 add_subdirectory(src)
 add_subdirectory(examples)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL Debug)
+  #设定log_level为debug
+  target_compile_definitions(peer PRIVATE LOG_LEVEL=3)
+endif()
+
+# 禁用保活机制，启用日志重定向
+target_compile_definitions(peer PRIVATE 
+  CONFIG_KEEPALIVE_TIMEOUT=0
+  LOG_REDIRECT=1
+)
 
 if(ENABLE_TESTS)
   add_subdirectory(tests)
@@ -78,18 +92,22 @@ ExternalProject_Add(cjson
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
 )
 
+set(MBEDTLS_C_FLAGS "-fPIC -DMBEDTLS_SSL_DTLS_SRTP")
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL Debug)
+  set(MBEDTLS_C_FLAGS "${MBEDTLS_C_FLAGS} -g")
+endif()
+
 ExternalProject_Add(mbedtls
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls
   CMAKE_ARGS
-    -DCMAKE_C_FLAGS="-fPIC"
+    -DCMAKE_C_FLAGS=${MBEDTLS_C_FLAGS}
     -DENABLE_TESTING=off
     -DENABLE_PROGRAMS=off
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dist
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
 )
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h INPUT_CONTENT)
-string(REPLACE "//#define MBEDTLS_SSL_DTLS_SRTP" "#define MBEDTLS_SSL_DTLS_SRTP" MODIFIED_CONTENT ${INPUT_CONTENT})
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h ${MODIFIED_CONTENT})
+
 
 ExternalProject_Add(srtp2
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsrtp
