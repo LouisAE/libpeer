@@ -432,12 +432,12 @@ static const char* peer_connection_create_sdp(PeerConnection* pc, SdpType sdp_ty
 
   switch (sdp_type) {
     case SDP_TYPE_OFFER:
-      role = DTLS_SRTP_ROLE_SERVER;
+      role = DTLS_SRTP_ROLE_CLIENT;
       agent_clear_candidates(&pc->agent);
       pc->agent.mode = AGENT_MODE_CONTROLLING;
       break;
     case SDP_TYPE_ANSWER:
-      role = DTLS_SRTP_ROLE_CLIENT;
+      role = DTLS_SRTP_ROLE_SERVER;
       pc->agent.mode = AGENT_MODE_CONTROLLED;
       break;
     default:
