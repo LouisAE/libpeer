@@ -68,8 +68,8 @@ add_subdirectory(src)
 add_subdirectory(examples)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL Debug)
-  #设定log_level为debug
-  target_compile_definitions(peer PRIVATE LOG_LEVEL=3)
+  #设定log_level为debug，启用mbedtls日志
+  target_compile_definitions(peer PRIVATE LOG_LEVEL=3 CONFIG_MBEDTLS_DEBUG=1)
 endif()
 
 # 禁用保活机制，启用日志重定向
