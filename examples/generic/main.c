@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -11,6 +12,30 @@
 int g_interrupted = 0;
 PeerConnection* g_pc = NULL;
 PeerConnectionState g_state;
+
+void peer_log(char* level_tag, const char* file_name, int line_number, const char* fmt, ...)
+{
+  uint32_t len = strlen(file_name);
+  int i = 0;
+  const char* pos = file_name;
+  va_list args;
+
+  for (i = 0; i < len; i++)
+  {
+    if (file_name[i] == '/')
+    {
+      pos = file_name + i + 1;
+    }
+  }
+
+  printf("[%s] %s:%d ", level_tag, pos, line_number);
+
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+
+  printf("\n");
+}
 
 static void onconnectionstatechange(PeerConnectionState state, void* data) {
   printf("state is changed: %s\n", peer_connection_state_to_string(state));
