@@ -31,7 +31,7 @@ int agent_create(Agent* agent) {
   }
   LOGI("create IPv4 UDP socket: %d", agent->udp_sockets[0].fd);
 
-#if CONFIG_IPV6
+#if PEER_CONFIG_IPV6
   if ((ret = udp_socket_open(&agent->udp_sockets[1], AF_INET6, 0)) < 0) {
     LOGE("Failed to create IPv6 UDP socket.");
     return ret;
@@ -50,7 +50,7 @@ void agent_destroy(Agent* agent) {
     udp_socket_close(&agent->udp_sockets[0]);
   }
 
-#if CONFIG_IPV6
+#if PEER_CONFIG_IPV6
   if (agent->udp_sockets[1].fd > 0) {
     udp_socket_close(&agent->udp_sockets[1]);
   }
@@ -64,7 +64,7 @@ static int agent_socket_recv(Agent* agent, Address* addr, uint8_t* buf, int len)
   fd_set rfds;
   struct timeval tv;
   int addr_type[] = { AF_INET,
-#if CONFIG_IPV6
+#if PEER_CONFIG_IPV6
                       AF_INET6,
 #endif
   };
@@ -127,7 +127,7 @@ static int agent_create_host_addr(Agent* agent) {
   const char* iface_prefx[] = {CONFIG_IFACE_PREFIX};
   IceCandidate* ice_candidate;
   int addr_type[] = { AF_INET,
-#if CONFIG_IPV6
+#if PEER_CONFIG_IPV6
                       AF_INET6,
 #endif
   };

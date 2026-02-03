@@ -73,7 +73,7 @@ static int peer_signaling_resolve_token(const char* token, char* username, char*
     LOGW("Invalid token");
     return -1;
   }
-  base64_decode(token, strlen(token), (unsigned char*)plaintext, sizeof(plaintext));
+  peer_base64_decode(token, strlen(token), (unsigned char*)plaintext, sizeof(plaintext));
   colon = strchr(plaintext, ':');
   if (colon == NULL) {
     LOGW("Invalid token: %s", token);

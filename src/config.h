@@ -61,11 +61,11 @@
 #define CONFIG_MAX_NALU_SIZE (10 * 1024)  // 10KB
 #endif
 
-#define CONFIG_IPV6 0
+#define PEER_CONFIG_IPV6 0
 // empty will use first active interface
 #define CONFIG_IFACE_PREFIX ""
 
-// #define LOG_LEVEL LEVEL_DEBUG
+// #define PEER_LOG_LEVEL LEVEL_DEBUG
 #ifndef LOG_REDIRECT
 #define LOG_REDIRECT 0
 #endif

@@ -4,7 +4,7 @@
 
 static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-void base64_encode(const unsigned char* input, int input_len, char* output, int output_len) {
+void peer_base64_encode(const unsigned char* input, int input_len, char* output, int output_len) {
   int i, j;
   unsigned char buf[3];
   int buf_len;
@@ -34,7 +34,7 @@ void base64_encode(const unsigned char* input, int input_len, char* output, int 
   output[output_index] = '\0';
 }
 
-int base64_decode(const char* input, int input_len, unsigned char* output, int output_len) {
+int peer_base64_decode(const char* input, int input_len, unsigned char* output, int output_len) {
   int i, j;
   unsigned char buf[4];
   int buf_len;
