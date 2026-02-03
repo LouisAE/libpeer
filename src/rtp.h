@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#define __BYTE_ORDER __LITTLE_ENDIAN // ¶¨Òå×Ö½ÚÐò
-
 #ifdef __BYTE_ORDER
 #define __BIG_ENDIAN 4321
 #define __LITTLE_ENDIAN 1234

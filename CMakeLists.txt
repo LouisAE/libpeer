@@ -54,14 +54,17 @@ add_definitions("-Wunused-variable -Werror=sequence-point -Werror=pointer-sign -
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsrtp)
 add_subdirectory(src)
 
-
+#向应用指定公共头文件
+target_include_directories(peer PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
+#指定字节序
+target_compile_definitions(peer PRIVATE __BYTE_ORDER=__LITTLE_ENDIAN)
 
 #不编译示例
 #add_subdirectory(examples)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL Debug)
   #设定log_level为debug，启用mbedtls日志
-  target_compile_definitions(peer PRIVATE LOG_LEVEL=3 CONFIG_MBEDTLS_DEBUG=1)
+  target_compile_definitions(peer PRIVATE PEER_LOG_LEVEL=3 CONFIG_MBEDTLS_DEBUG=1)
 endif()
 
 # 禁用保活机制，启用日志重定向
