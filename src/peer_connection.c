@@ -165,6 +165,34 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
   memset(&pc->sctp, 0, sizeof(pc->sctp));
 
   if (pc->config.audio_codec) {
+    
+	switch(pc->config.audio_codec)
+	{
+		case CODEC_PCMA:
+		case CODEC_PCMU:
+			if (pc->config.audio_duration)
+			{
+				pc->artp_encoder.timestamp_increment = pc->config.audio_duration * 8000 / 1000;
+			}
+			else
+			{
+				pc->artp_encoder.timestamp_increment = CONFIG_AUDIO_DURATION * 8000 / 1000;
+			}
+			break;
+		case CODEC_OPUS:
+			if (pc->config.audio_duration)
+			{
+				pc->artp_encoder.timestamp_increment = pc->config.audio_duration * 48000 / 1000;
+			}
+			else
+			{
+				pc->artp_encoder.timestamp_increment = CONFIG_AUDIO_DURATION * 48000 / 1000;
+			}
+			break;
+		default:
+		  break;
+	}
+
     rtp_encoder_init(&pc->artp_encoder, pc->config.audio_codec,
                      peer_connection_outgoing_rtp_packet, (void*)pc);
 
@@ -173,6 +201,11 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
   }
 
   if (pc->config.video_codec) {
+    if (pc->config.video_frame_rate)
+    {
+      pc->vrtp_encoder.timestamp_increment = 90000 / (pc->config.video_frame_rate);
+    }
+
     rtp_encoder_init(&pc->vrtp_encoder, pc->config.video_codec,
                      peer_connection_outgoing_rtp_packet, (void*)pc);
 
