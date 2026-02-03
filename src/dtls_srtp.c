@@ -95,6 +95,8 @@ static int dtls_srtp_selfsign_cert(DtlsSrtp* dtls_srtp) {
   mbedtls_rsa_gen_key(mbedtls_pk_rsa(dtls_srtp->pkey), mbedtls_ctr_drbg_random, &dtls_srtp->ctr_drbg, RSA_KEY_LENGTH, 65537);
 #endif
 
+  psa_crypto_init();
+
   mbedtls_x509write_crt_init(&crt);
 
   mbedtls_x509write_crt_set_subject_key(&crt, &dtls_srtp->pkey);
