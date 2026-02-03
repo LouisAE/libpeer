@@ -11,19 +11,18 @@ add_library(peer
   ${MQTT_SERIALIZER_SOURCES}
 )
 
-include_directories(peer PUBLIC
+target_include_directories(peer PRIVATE
   ${HTTP_INCLUDE_PUBLIC_DIRS}
   ${MQTT_INCLUDE_PUBLIC_DIRS}
+  $ENV{ARMINO_PATH}/components/psa_mbedtls/mbedtls/include
+	$ENV{ARMINO_PATH}/components/psa_mbedtls/mbedtls/library
+	$ENV{ARMINO_PATH}/components/psa_mbedtls/mbedtls_port/inc
+	$ENV{ARMINO_PATH}/components/psa_mbedtls/mbedtls/include/mbedtls
+	$ENV{ARMINO_PATH}/components/psa_mbedtls/mbedtls_port/configs
+  ${CMAKE_CURRENT_LIST_DIR}/include/
 )
 
-add_dependencies(peer cjson mbedtls usrsctp srtp2)
-
-target_link_libraries(peer ${DEP_LIBS})
+target_link_libraries(peer PRIVATE "srtp2" "armino::psa_mbedtls" "armino::mjson")
 
 set_target_properties(peer PROPERTIES PUBLIC_HEADER "${HEADERS}")
-
-install(TARGETS peer
-  LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/
-)
 
