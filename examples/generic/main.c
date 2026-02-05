@@ -85,6 +85,26 @@ static uint64_t get_timestamp() {
   return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
+void peer_log(char* level_tag, const char* file_name, int line_number, const char* fmt, ...)
+{
+  char* pos = file_name, *ptr = NULL;
+  va_list args;
+
+  for (ptr = file_name; *ptr != '\0'; ptr++)
+  {
+    if (*ptr == '/')
+    {
+      pos = ptr + 1;
+    }
+  }
+
+  printf("[%s] %s:%s", level_tag, pos, line_number);
+  
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+}
+
 void print_usage(const char* prog_name) {
   printf("Usage: %s -u <url> [-t <token>]\n", prog_name);
 }
