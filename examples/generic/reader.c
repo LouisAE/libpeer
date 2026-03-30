@@ -153,6 +153,25 @@ uint8_t* reader_get_audio_frame(int* size) {
   return buf;
 }
 
+uint8_t* reader_get_audio_frame_aac(int* size) {
+  uint8_t* buf = NULL;
+  static int pos = 0;
+
+  *size = (((uint16_t)g_audio_buf[pos + 3] & 0x03) << 11);
+  *size |= ((uint16_t)g_audio_buf[pos + 4] << 3);
+  *size |= (((uint16_t)g_audio_buf[pos + 5] & 0xE0) >> 5);
+
+  buf = g_audio_buf + pos;
+  pos += *size;
+
+  if (pos >= g_audio_size)
+  {
+    pos = 0;
+  }
+
+  return buf;
+}
+
 void reader_deinit() {
   if (g_sps_buf != NULL) {
     free(g_sps_buf);
