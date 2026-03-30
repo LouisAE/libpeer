@@ -188,6 +188,9 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
 			{
 				pc->artp_encoder.timestamp_increment = CONFIG_AUDIO_DURATION * 48000 / 1000;
 			}
+      break;
+    case CODEC_AAC:
+      pc->artp_encoder.timestamp_increment = 1024;
 			break;
 		default:
 		  break;
@@ -508,6 +511,10 @@ static const char* peer_connection_create_sdp(PeerConnection* pc, SdpType sdp_ty
       break;
     case CODEC_OPUS:
       sdp_append_opus(pc->sdp);
+      break;
+    case CODEC_AAC:
+      sdp_append_aac(pc->sdp);
+      break;
     default:
       break;
   }

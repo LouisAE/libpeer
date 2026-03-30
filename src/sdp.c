@@ -69,6 +69,17 @@ void sdp_append_opus(char* sdp) {
   sdp_append(sdp, "a=rtcp-mux");
 }
 
+void sdp_append_aac(char* sdp) {
+  sdp_append(sdp, "m=audio 9 UDP/TLS/RTP/SAVP 112");
+  sdp_append(sdp, "c=IN IP4 0.0.0.0");
+  sdp_append(sdp, "a=rtpmap:112 mpeg4-generic/8000/1");
+  sdp_append(sdp, "a=fmtp:112 streamtype=5;profile-level-id=1;mode=AAC-hbr;config=1588;sizeLength=13;indexLength=3;constantDuration=1024");
+  sdp_append(sdp, "a=ssrc:7 cname:webrtc-aac");
+  sdp_append(sdp, "a=sendrecv");
+  sdp_append(sdp, "a=mid:audio");
+  sdp_append(sdp, "a=rtcp-mux");
+}
+
 void sdp_append_datachannel(char* sdp) {
   sdp_append(sdp, "m=application 50712 UDP/DTLS/SCTP webrtc-datachannel");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");

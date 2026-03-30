@@ -21,7 +21,8 @@ typedef enum RtpPayloadType {
   PT_PCMA = 8,
   PT_G722 = 9,
   PT_H264 = 96,
-  PT_OPUS = 111
+  PT_OPUS = 111,
+  PT_AAC = 112
 
 } RtpPayloadType;
 
@@ -31,6 +32,7 @@ typedef enum RtpSsrc {
   SSRC_PCMA = 4,
   SSRC_PCMU = 5,
   SSRC_OPUS = 6,
+  SSRC_AAC = 7,
 
 } RtpSsrc;
 

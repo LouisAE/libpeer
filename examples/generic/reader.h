@@ -9,4 +9,6 @@ uint8_t* reader_get_video_frame(int* size);
 
 uint8_t* reader_get_audio_frame(int* size);
 
+uint8_t* reader_get_audio_frame_aac(int* size);
+
 void reader_deinit();
