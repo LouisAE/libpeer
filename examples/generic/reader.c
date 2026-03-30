@@ -156,14 +156,13 @@ uint8_t* reader_get_audio_frame(int* size) {
 uint8_t* reader_get_audio_frame_aac(int* size) {
   uint8_t* buf = NULL;
   static int pos = 0;
-  int adts_header_len = 7;
 
   *size = (((uint16_t)g_audio_buf[pos + 3] & 0x03) << 11);
   *size |= ((uint16_t)g_audio_buf[pos + 4] << 3);
   *size |= (((uint16_t)g_audio_buf[pos + 5] & 0xE0) >> 5);
-  *size -= adts_header_len;
-  buf = g_audio_buf + pos + 7;
-  pos += (7 + *size);
+
+  buf = g_audio_buf + pos;
+  pos += *size;
 
   if (pos >= g_audio_size)
   {

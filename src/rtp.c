@@ -161,16 +161,17 @@ static int rtp_encoder_encode_h264(RtpEncoder* rtp_encoder, uint8_t* buf, size_t
   return 0;
 }
 
-// A rtp packet with single aac frame
+// An Rtp packet with single aac frame
 static int rtp_encoder_encode_aac(RtpEncoder* rtp_encoder, uint8_t* buf, size_t size){
   RtpHeader* rtp_header = (RtpHeader*)rtp_encoder->buf;
   const size_t pos = sizeof(RtpHeader);
+  const uint8_t adts_header_len = 7;
 
   rtp_header->version = 2;
   rtp_header->padding = 0;
   rtp_header->extension = 0;
   rtp_header->csrccount = 0;
-  rtp_header->markerbit = 0;
+  rtp_header->markerbit = 1; // if set to 0, some players may fail
   rtp_header->type = rtp_encoder->type;
   rtp_header->seq_number = htons(rtp_encoder->seq_number++);
   rtp_header->timestamp = htonl(rtp_encoder->timestamp);
@@ -181,11 +182,13 @@ static int rtp_encoder_encode_aac(RtpEncoder* rtp_encoder, uint8_t* buf, size_t 
   rtp_encoder->buf[pos] = 0;
   rtp_encoder->buf[pos + 1] = 0x10; // (sizeLength + indexDeltaLength) * 1
   
+  size -= adts_header_len;
   // AU-header
   rtp_encoder->buf[pos + 2] = (size >> 5) & 0xff; // size << 3 >> 8
   rtp_encoder->buf[pos + 3] = (size << 3) & 0xff;
+  rtp_encoder->buf[pos + 3] |= 1;  // frame index
 
-  memcpy(rtp_encoder->buf + pos + 4, buf, size);
+  memcpy(rtp_encoder->buf + pos + 4, buf + adts_header_len, size);
   rtp_encoder->on_packet(rtp_encoder->buf, size + pos + 4, rtp_encoder->user_data);
   return 0;
 }
@@ -235,6 +238,7 @@ void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_
       rtp_encoder->type = PT_OPUS;
       rtp_encoder->ssrc = SSRC_OPUS;
       rtp_encoder->encode_func = rtp_encoder_encode_generic;
+      break;
     case CODEC_AAC:
       rtp_encoder->type = PT_AAC;
       rtp_encoder->ssrc = SSRC_AAC;

@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
       },
       .datachannel = DATA_CHANNEL_NONE,
       .video_codec = CODEC_H264,
-      .audio_codec = CODEC_PCMA,
+      .audio_codec = CODEC_AAC,
       .onvideotrack = on_videotrack,
       .onaudiotrack = on_audiotrack,
       .video_frame_rate = 30
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
 
   reader_init();
 
-  while (0){//!g_interrupted) {
+  while (!g_interrupted) {
     if (g_state == PEER_CONNECTION_COMPLETED) {
       curr_time = get_timestamp();
 
@@ -152,8 +152,8 @@ int main(int argc, char* argv[]) {
           buf = NULL;
         }
       }
-
-      if (curr_time - audio_time > 23) {
+      // 8000Hz 1024/8000 == 0.128s
+      if (curr_time - audio_time > 128) {
         if ((buf = reader_get_audio_frame_aac(&size)) != NULL) {
           peer_connection_send_audio(g_pc, buf, size);
           buf = NULL;
