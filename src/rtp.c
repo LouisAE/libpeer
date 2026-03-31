@@ -264,6 +264,7 @@ void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_
     case CODEC_AAC:
       rtp_encoder->type = PT_AAC;
       rtp_encoder->ssrc = SSRC_AAC;
+      rtp_encoder->timestamp_increment = 1024;
       rtp_encoder->encode_func = rtp_encoder_encode_aac;
       break;
     default:
