@@ -12,6 +12,8 @@ int g_interrupted = 0;
 PeerConnection* g_pc = NULL;
 PeerConnectionState g_state;
 
+FILE* f = NULL;
+
 static void onconnectionstatechange(PeerConnectionState state, void* data) {
   printf("state is changed: %s\n", peer_connection_state_to_string(state));
   g_state = state;
@@ -61,7 +63,11 @@ void on_videotrack(uint8_t* data, size_t size, void* userdata)
 
 void on_audiotrack(uint8_t* data, size_t size, void* userdata)
 {
-  printf("audio size:%lu\n", size);
+  if (f == NULL)
+  {
+    f = fopen("output.aac", "wb");
+  }
+  fwrite(data, size, 1, f);
 }
 
 static uint64_t get_timestamp() {

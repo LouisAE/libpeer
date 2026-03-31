@@ -27,6 +27,24 @@ typedef struct FuHeader {
   uint8_t s : 1;
 } FuHeader;
 
+/*
+typedef struct __attribute__((packed)) AacHeader {
+  uint16_t syncword : 12; // must be 0xFFF
+  uint8_t id : 1;         // 0 for mpeg-4
+  uint8_t layer : 2;
+  uint8_t protection_absent : 1;
+  uint8_t profile : 2;
+  uint8_t sampling_frequency_index : 4;
+  uint8_t private_bit : 1;
+  uint8_t channel_configuration : 3;
+  uint8_t copyright_identification_bit : 1;
+  uint8_t copyright_identification_start : 1;
+  uint16_t aac_frame_length : 13;
+  uint16_t adts_buffer_fullness : 11;
+  uint8_t no_of_raw_data_blocks_in_frame : 2;
+} AacHeader;
+*/
+
 #define RTP_PAYLOAD_SIZE (CONFIG_MTU - sizeof(RtpHeader))
 #define FU_PAYLOAD_SIZE (CONFIG_MTU - sizeof(RtpHeader) - sizeof(FuHeader) - sizeof(NaluHeader))
 
@@ -186,7 +204,7 @@ static int rtp_encoder_encode_aac(RtpEncoder* rtp_encoder, uint8_t* buf, size_t 
   // AU-header
   rtp_encoder->buf[pos + 2] = (size >> 5) & 0xff; // size << 3 >> 8
   rtp_encoder->buf[pos + 3] = (size << 3) & 0xff;
-  rtp_encoder->buf[pos + 3] |= 1;  // frame index
+  rtp_encoder->buf[pos + 3] |= 1;  // frame index (3bit)
 
   memcpy(rtp_encoder->buf + pos + 4, buf + adts_header_len, size);
   rtp_encoder->on_packet(rtp_encoder->buf, size + pos + 4, rtp_encoder->user_data);
@@ -307,6 +325,57 @@ static int rtp_decode_generic(RtpDecoder* rtp_decoder, uint8_t* buf, size_t size
   return (int)size;
 }
 
+
+static int rtp_decode_aac(RtpDecoder* rtp_decoder, uint8_t* buf, size_t size) {
+  uint8_t res[CONFIG_MTU];
+
+  uint8_t *p_header = buf + sizeof(RtpHeader); // pointer for AU-headers
+  uint8_t *p_res = res; // pointer for result
+  uint8_t *p_data = NULL; // pointer for frame datas
+  
+  uint16_t frame_nums = ((((uint16_t)p_header[0]) << 8) + p_header[1]) >> 4; // Number of AU-headers
+  uint16_t frame_len = 0;
+  uint16_t total_size = 0;
+  int i = 0;
+
+  p_data = p_header + 2 + (2 * frame_nums);
+  p_header += 2;
+
+  if (rtp_decoder->on_packet == NULL)
+    return (int)size;
+
+  for (i = 0; i < frame_nums; i++)
+  {
+    frame_len = ((((uint16_t)(p_header[0])) << 8) + p_header[1]) >> 3; // len:13, idx:3
+    frame_len += 7;  // Simply set adts header length to 7
+
+    // Insufficient buffer space or corrupted packet
+    if (total_size + frame_len > CONFIG_MTU) 
+    {
+      return -1;
+    }
+    total_size += frame_len;
+
+    p_res[0] = 0xFF;
+    p_res[1] = 0xF1; // No CRC
+    p_res[2] = 0x6C; // profile:01, sampling_rate: 8000Hz
+    p_res[3] = 0x40; // 1 channel
+    p_res[3] |= (frame_len & 0x1800) >> 11;
+    p_res[4] = (frame_len & 0x7F8) >> 3;
+    p_res[5] = (frame_len & 0x7) << 5;
+    p_res[5] |= 0x1F;
+    p_res[6] = 0xFC; //variable bitrate
+    memcpy(p_res + 7, p_data, frame_len);
+
+    p_header += 2;
+    p_data += frame_len - 7;
+    p_res += frame_len;
+  }
+  
+  rtp_decoder->on_packet(res, total_size, rtp_decoder->user_data);
+  return (int)size;
+}
+
 void rtp_decoder_init(RtpDecoder* rtp_decoder, MediaCodec codec, RtpOnPacket on_packet, void* user_data) {
   rtp_decoder->on_packet = on_packet;
   rtp_decoder->user_data = user_data;
@@ -318,8 +387,10 @@ void rtp_decoder_init(RtpDecoder* rtp_decoder, MediaCodec codec, RtpOnPacket on_
     case CODEC_PCMA:
     case CODEC_PCMU:
     case CODEC_OPUS:
-    case CODEC_AAC:
       rtp_decoder->decode_func = rtp_decode_generic;
+    case CODEC_AAC:
+      rtp_decoder->decode_func = rtp_decode_aac;
+      
     default:
       break;
   }
