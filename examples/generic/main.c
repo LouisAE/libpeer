@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -13,29 +12,7 @@ int g_interrupted = 0;
 PeerConnection* g_pc = NULL;
 PeerConnectionState g_state;
 
-void peer_log(char* level_tag, const char* file_name, int line_number, const char* fmt, ...)
-{
-  uint32_t len = strlen(file_name);
-  int i = 0;
-  const char* pos = file_name;
-  va_list args;
-
-  for (i = 0; i < len; i++)
-  {
-    if (file_name[i] == '/')
-    {
-      pos = file_name + i + 1;
-    }
-  }
-
-  printf("[%s] %s:%d ", level_tag, pos, line_number);
-
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-
-  printf("\n");
-}
+FILE* f = NULL;
 
 static void onconnectionstatechange(PeerConnectionState state, void* data) {
   printf("state is changed: %s\n", peer_connection_state_to_string(state));
@@ -77,6 +54,20 @@ static void* peer_connection_task(void* data) {
   }
 
   pthread_exit(NULL);
+}
+
+void on_videotrack(uint8_t* data, size_t size, void* userdata)
+{
+  printf("data size:%lu\n", size);
+}
+
+void on_audiotrack(uint8_t* data, size_t size, void* userdata)
+{
+  if (f == NULL)
+  {
+    f = fopen("output.aac", "wb");
+  }
+  fwrite(data, size, 1, f);
 }
 
 static uint64_t get_timestamp() {
@@ -128,9 +119,13 @@ int main(int argc, char* argv[]) {
       .ice_servers = {
           {.urls = "stun:stun.l.google.com:19302"},
       },
-      .datachannel = DATA_CHANNEL_STRING,
+      .datachannel = DATA_CHANNEL_NONE,
       .video_codec = CODEC_H264,
-      .audio_codec = CODEC_PCMA};
+      .audio_codec = CODEC_AAC,
+      .onvideotrack = on_videotrack,
+      .onaudiotrack = on_audiotrack,
+      .video_frame_rate = 30
+    };
 
   printf("=========== Parsed Arguments ===========\n");
   printf(" %-5s : %s\n", "URL", url);
@@ -154,7 +149,7 @@ int main(int argc, char* argv[]) {
       curr_time = get_timestamp();
 
       // FPS 25
-      if (curr_time - video_time > 40) {
+      if (curr_time - video_time > 33) {
         video_time = curr_time;
         if ((buf = reader_get_video_frame(&size)) != NULL) {
           peer_connection_send_video(g_pc, buf, size);
@@ -163,9 +158,9 @@ int main(int argc, char* argv[]) {
           buf = NULL;
         }
       }
-
-      if (curr_time - audio_time > 20) {
-        if ((buf = reader_get_audio_frame(&size)) != NULL) {
+      // 8000Hz 1024/8000 == 0.128s
+      if (curr_time - audio_time > 128) {
+        if ((buf = reader_get_audio_frame_aac(&size)) != NULL) {
           peer_connection_send_audio(g_pc, buf, size);
           buf = NULL;
         }

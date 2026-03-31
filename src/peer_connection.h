@@ -59,6 +59,7 @@ typedef enum MediaCodec {
   CODEC_OPUS,  // not implemented yet
   CODEC_PCMA,
   CODEC_PCMU,
+  CODEC_AAC
 
 } MediaCodec;
 
