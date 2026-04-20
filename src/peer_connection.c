@@ -501,21 +501,21 @@ static const char* peer_connection_create_sdp(PeerConnection* pc, SdpType sdp_ty
   sdp_append(pc->sdp, peer_connection_dtls_role_setup_value(role));
 
   if (pc->config.video_codec == CODEC_H264) {
-    sdp_append_h264(pc->sdp);
+    sdp_append_h264(pc->sdp, pc->config.video_ssrc);
   }
 
   switch (pc->config.audio_codec) {
     case CODEC_PCMA:
-      sdp_append_pcma(pc->sdp);
+      sdp_append_pcma(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_PCMU:
-      sdp_append_pcmu(pc->sdp);
+      sdp_append_pcmu(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_OPUS:
-      sdp_append_opus(pc->sdp);
+      sdp_append_opus(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_AAC:
-      sdp_append_aac(pc->sdp);
+      sdp_append_aac(pc->sdp, pc->config.audio_ssrc);
       break;
     default:
       break;

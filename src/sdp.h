@@ -2,6 +2,7 @@
 #define SDP_H_
 
 #include <string.h>
+#include <stdint.h>
 #include "config.h"
 
 #define SDP_ATTR_LENGTH 128
@@ -10,15 +11,15 @@
 #define ICE_LITE 0
 #endif
 
-void sdp_append_h264(char* sdp);
+void sdp_append_h264(char* sdp, uint32_t ssrc);
 
-void sdp_append_pcma(char* sdp);
+void sdp_append_pcma(char* sdp, uint32_t ssrc);
 
-void sdp_append_pcmu(char* sdp);
+void sdp_append_pcmu(char* sdp, uint32_t ssrc);
 
-void sdp_append_opus(char* sdp);
+void sdp_append_opus(char* sdp, uint32_t ssrc);
 
-void sdp_append_aac(char* sdp);
+void sdp_append_aac(char* sdp, uint32_t ssrc);
 
 void sdp_append_datachannel(char* sdp);
 
