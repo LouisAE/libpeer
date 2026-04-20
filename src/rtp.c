@@ -133,7 +133,7 @@ static int rtp_encoder_encode_h264_fu_a(RtpEncoder* rtp_encoder, uint8_t* buf, s
     fu_header->e = 0;
 
     memcpy(rtp_packet->payload + sizeof(NaluHeader) + sizeof(FuHeader), buf, FU_PAYLOAD_SIZE);
-    // ¸ü¸Ä·µ»ØÖµ
+    // æ›´æ”¹è¿”å›žå€¼
     ret = rtp_encoder->on_packet(rtp_encoder->buf, CONFIG_MTU, rtp_encoder->user_data);
     if (ret != 0)
     {
@@ -175,7 +175,7 @@ static int rtp_encoder_encode_h264(RtpEncoder* rtp_encoder, uint8_t* buf, size_t
     while (pstart[nalu_size - 1] == 0x00)
       nalu_size--;
 
-    // ¸ü¸Ä·µ»ØÖµ
+    // æ›´æ”¹è¿”å›žå€¼
     if (nalu_size <= RTP_PAYLOAD_SIZE) {
       return rtp_encoder_encode_h264_single(rtp_encoder, pstart, nalu_size);
 
@@ -232,6 +232,7 @@ static int rtp_encoder_encode_generic(RtpEncoder* rtp_encoder, uint8_t* buf, siz
   rtp_header->ssrc = htonl(rtp_encoder->ssrc);
   memcpy(rtp_encoder->buf + sizeof(RtpHeader), buf, size);
 
+  //æ›´æ”¹è¿”å›žå€¼
   return rtp_encoder->on_packet(rtp_encoder->buf, size + sizeof(RtpHeader), rtp_encoder->user_data);
 }
 
