@@ -124,7 +124,9 @@ int main(int argc, char* argv[]) {
       .audio_codec = CODEC_AAC,
       .onvideotrack = on_videotrack,
       .onaudiotrack = on_audiotrack,
-      .video_frame_rate = 30
+      .video_frame_rate = 30,
+      .audio_ssrc = 54321,
+      .video_ssrc = 98765
     };
 
   printf("=========== Parsed Arguments ===========\n");
