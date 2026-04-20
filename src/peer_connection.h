@@ -76,6 +76,7 @@ typedef struct PeerConfiguration {
   MediaCodec audio_codec;
   MediaCodec video_codec;
   DataChannelType datachannel;
+  // 视频帧率和音频时长配置
   uint32_t video_frame_rate;
   uint16_t audio_duration;
 

@@ -74,6 +74,7 @@ typedef struct RtpMap {
 
 typedef struct RtpEncoder RtpEncoder;
 typedef struct RtpDecoder RtpDecoder;
+// 更改函数返回值以捕捉通信错误
 typedef int (*RtpOnPacket)(uint8_t* packet, size_t bytes, void* user_data);
 
 struct RtpDecoder {

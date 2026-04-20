@@ -50,7 +50,8 @@ struct PeerConnection {
 static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  return agent_send(&pc->agent, data, size);
+  // 返回错误码
+  return agent_send(&pc->agent, data, size); 
 }
 
 static int peer_connection_dtls_srtp_recv(void* ctx, unsigned char* buf, size_t len) {
@@ -165,7 +166,8 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
   memset(&pc->sctp, 0, sizeof(pc->sctp));
 
   if (pc->config.audio_codec) {
-    
+  
+  // 添加逻辑，允许用户设置每帧音频长度和视频帧率
 	switch(pc->config.audio_codec)
 	{
 		case CODEC_PCMA:
