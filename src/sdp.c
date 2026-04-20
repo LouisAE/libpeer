@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "sdp.h"
 
@@ -26,55 +27,55 @@ void sdp_reset(char* sdp) {
   memset(sdp, 0, CONFIG_SDP_BUFFER_SIZE);
 }
 
-void sdp_append_h264(char* sdp) {
+void sdp_append_h264(char* sdp, uint32_t ssrc) {
   sdp_append(sdp, "m=video 9 UDP/TLS/RTP/SAVPF 96");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtcp-fb:96 nack");
   sdp_append(sdp, "a=rtcp-fb:96 nack pli");
   sdp_append(sdp, "a=fmtp:96 profile-level-id=42e01f;level-asymmetry-allowed=1");
   sdp_append(sdp, "a=rtpmap:96 H264/90000");
-  sdp_append(sdp, "a=ssrc:1 cname:webrtc-h264");
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-h264", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:video");
   sdp_append(sdp, "a=rtcp-mux");
 }
 
-void sdp_append_pcma(char* sdp) {
+void sdp_append_pcma(char* sdp, uint32_t ssrc) {
   sdp_append(sdp, "m=audio 9 UDP/TLS/RTP/SAVP 8");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtpmap:8 PCMA/8000");
-  sdp_append(sdp, "a=ssrc:4 cname:webrtc-pcma");
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-pcma", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:audio");
   sdp_append(sdp, "a=rtcp-mux");
 }
 
-void sdp_append_pcmu(char* sdp) {
+void sdp_append_pcmu(char* sdp, uint32_t ssrc) {
   sdp_append(sdp, "m=audio 9 UDP/TLS/RTP/SAVP 0");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtpmap:0 PCMU/8000");
-  sdp_append(sdp, "a=ssrc:5 cname:webrtc-pcmu");
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-pcmu", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:audio");
   sdp_append(sdp, "a=rtcp-mux");
 }
 
-void sdp_append_opus(char* sdp) {
+void sdp_append_opus(char* sdp, uint32_t ssrc) {
   sdp_append(sdp, "m=audio 9 UDP/TLS/RTP/SAVP 111");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtpmap:111 opus/48000/2");
-  sdp_append(sdp, "a=ssrc:6 cname:webrtc-opus");
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-opus", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:audio");
   sdp_append(sdp, "a=rtcp-mux");
 }
 
-void sdp_append_aac(char* sdp) {
+void sdp_append_aac(char* sdp, uint32_t ssrc) {
   sdp_append(sdp, "m=audio 9 UDP/TLS/RTP/SAVP 112");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtpmap:112 mpeg4-generic/8000/1");
   sdp_append(sdp, "a=fmtp:112 streamtype=5;profile-level-id=1;mode=AAC-hbr;config=1588;sizeLength=13;indexLength=3;constantDuration=1024");
-  sdp_append(sdp, "a=ssrc:7 cname:webrtc-aac");
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-aac", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:audio");
   sdp_append(sdp, "a=rtcp-mux");

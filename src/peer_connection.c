@@ -50,7 +50,8 @@ struct PeerConnection {
 static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  return agent_send(&pc->agent, data, size);
+  // 返回错误码
+  return agent_send(&pc->agent, data, size); 
 }
 
 static int peer_connection_dtls_srtp_recv(void* ctx, unsigned char* buf, size_t len) {
@@ -165,7 +166,8 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
   memset(&pc->sctp, 0, sizeof(pc->sctp));
 
   if (pc->config.audio_codec) {
-    
+  
+  // 添加逻辑，允许用户设置每帧音频长度和视频帧率
 	switch(pc->config.audio_codec)
 	{
 		case CODEC_PCMA:
@@ -499,21 +501,21 @@ static const char* peer_connection_create_sdp(PeerConnection* pc, SdpType sdp_ty
   sdp_append(pc->sdp, peer_connection_dtls_role_setup_value(role));
 
   if (pc->config.video_codec == CODEC_H264) {
-    sdp_append_h264(pc->sdp);
+    sdp_append_h264(pc->sdp, pc->config.video_ssrc);
   }
 
   switch (pc->config.audio_codec) {
     case CODEC_PCMA:
-      sdp_append_pcma(pc->sdp);
+      sdp_append_pcma(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_PCMU:
-      sdp_append_pcmu(pc->sdp);
+      sdp_append_pcmu(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_OPUS:
-      sdp_append_opus(pc->sdp);
+      sdp_append_opus(pc->sdp, pc->config.audio_ssrc);
       break;
     case CODEC_AAC:
-      sdp_append_aac(pc->sdp);
+      sdp_append_aac(pc->sdp, pc->config.audio_ssrc);
       break;
     default:
       break;

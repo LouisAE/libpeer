@@ -5,7 +5,8 @@
 // #define CONFIG_DTLS_USE_ECDSA 1
 
 #define SCTP_MTU (1200)
-#define CONFIG_MTU (1500)
+// 从1300改为1500，防止aac拉流时出错
+#define CONFIG_MTU (1500) 
 
 #ifndef CONFIG_USE_LWIP
 #define CONFIG_USE_LWIP 0
