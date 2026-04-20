@@ -47,10 +47,10 @@ struct PeerConnection {
   uint32_t remote_vssrc;
 };
 
-static void peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
+static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  agent_send(&pc->agent, data, size);
+  return agent_send(&pc->agent, data, size);
 }
 
 static int peer_connection_dtls_srtp_recv(void* ctx, unsigned char* buf, size_t len) {
