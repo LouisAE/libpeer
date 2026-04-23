@@ -56,18 +56,20 @@ static void* peer_connection_task(void* data) {
   pthread_exit(NULL);
 }
 
-void on_videotrack(uint8_t* data, size_t size, void* userdata)
+int on_videotrack(uint8_t* data, size_t size, void* userdata)
 {
   printf("data size:%lu\n", size);
+  return size;
 }
 
-void on_audiotrack(uint8_t* data, size_t size, void* userdata)
+int on_audiotrack(uint8_t* data, size_t size, void* userdata)
 {
   if (f == NULL)
   {
     f = fopen("output.aac", "wb");
   }
   fwrite(data, size, 1, f);
+  return size;
 }
 
 static uint64_t get_timestamp() {
