@@ -82,6 +82,7 @@ typedef struct PeerConfiguration {
   uint32_t video_ssrc;
   uint32_t audio_ssrc;
 
+  // 修改返回值类型以适应RtpOnpacket的指针类型
   int (*onaudiotrack)(uint8_t* data, size_t size, void* userdata);
   int (*onvideotrack)(uint8_t* data, size_t size, void* userdata);
   void (*on_request_keyframe)(void* userdata);
