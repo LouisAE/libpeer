@@ -50,7 +50,7 @@ struct PeerConnection {
 static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  // ���ش�����
+  // ���ش�����
   return agent_send(&pc->agent, data, size); 
 }
 
@@ -165,6 +165,7 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
 
   memset(&pc->sctp, 0, sizeof(pc->sctp));
 
+  // 以下几个函数都添加了PeerConfiguration作为输入参数，可以在内部自定义一下参数
   if (pc->config.audio_codec) {
     rtp_encoder_init(&pc->artp_encoder, pc->config.audio_codec,
                      peer_connection_outgoing_rtp_packet, &pc->config,(void*)pc);

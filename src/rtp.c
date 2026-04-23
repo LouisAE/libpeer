@@ -247,6 +247,7 @@ void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_
   rtp_encoder->timestamp = 0;
   rtp_encoder->seq_number = 0;
 
+  // 修改一些初始化条件，允许用户自定义
   switch (codec) {
     case CODEC_H264:
       rtp_encoder->type = PT_H264;
