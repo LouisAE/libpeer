@@ -135,7 +135,7 @@ static int rtp_encoder_encode_h264_fu_a(RtpEncoder* rtp_encoder, uint8_t* buf, s
     memcpy(rtp_packet->payload + sizeof(NaluHeader) + sizeof(FuHeader), buf, FU_PAYLOAD_SIZE);
     // 更改返回值
     ret = rtp_encoder->on_packet(rtp_encoder->buf, CONFIG_MTU, rtp_encoder->user_data);
-    if (ret != 0)
+    if (ret <= 0)
     {
       break;
     }
@@ -164,6 +164,7 @@ static int rtp_encoder_encode_h264(RtpEncoder* rtp_encoder, uint8_t* buf, size_t
   uint8_t* buf_end = buf + size;
   uint8_t *pstart, *pend;
   size_t nalu_size;
+  int ret = 0;
 
   for (pstart = h264_find_nalu(buf, buf_end); pstart < buf_end; pstart = pend) {
     pend = h264_find_nalu(pstart, buf_end);
@@ -177,10 +178,14 @@ static int rtp_encoder_encode_h264(RtpEncoder* rtp_encoder, uint8_t* buf, size_t
 
     // 更改返回值
     if (nalu_size <= RTP_PAYLOAD_SIZE) {
-      return rtp_encoder_encode_h264_single(rtp_encoder, pstart, nalu_size);
-
+      ret =  rtp_encoder_encode_h264_single(rtp_encoder, pstart, nalu_size);
     } else {
-      return rtp_encoder_encode_h264_fu_a(rtp_encoder, pstart, nalu_size);
+      ret = rtp_encoder_encode_h264_fu_a(rtp_encoder, pstart, nalu_size);
+    }
+
+    if (ret < 0)
+    {
+      break;
     }
   }
 
@@ -236,36 +241,78 @@ static int rtp_encoder_encode_generic(RtpEncoder* rtp_encoder, uint8_t* buf, siz
   return rtp_encoder->on_packet(rtp_encoder->buf, size + sizeof(RtpHeader), rtp_encoder->user_data);
 }
 
-void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_packet, void* user_data) {
+void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_packet, PeerConfiguration* config, void* user_data) {
   rtp_encoder->on_packet = on_packet;
   rtp_encoder->user_data = user_data;
   rtp_encoder->timestamp = 0;
   rtp_encoder->seq_number = 0;
 
+  // 修改一些初始化条件，允许用户自定义
   switch (codec) {
     case CODEC_H264:
       rtp_encoder->type = PT_H264;
-      rtp_encoder->ssrc = SSRC_H264;
+      rtp_encoder->ssrc = config->video_ssrc ? config->video_ssrc : SSRC_H264;
+
+      if (config->video_frame_rate)
+      {
+         rtp_encoder->timestamp_increment = 90000 / (config->video_frame_rate);
+      }
+      else
+      {
+        rtp_encoder->timestamp_increment = 90000 / 30;
+      }
+
       rtp_encoder->encode_func = rtp_encoder_encode_h264;
       break;
     case CODEC_PCMA:
       rtp_encoder->type = PT_PCMA;
-      rtp_encoder->ssrc = SSRC_PCMA;
+      rtp_encoder->ssrc = config->audio_ssrc ? config->audio_ssrc : SSRC_PCMA;
+
+      if (config->audio_duration)
+			{
+				rtp_encoder->timestamp_increment = config->audio_duration * 8000 / 1000;
+			}
+			else
+			{
+				rtp_encoder->timestamp_increment = CONFIG_AUDIO_DURATION * 8000 / 1000;
+			}
+
       rtp_encoder->encode_func = rtp_encoder_encode_generic;
       break;
     case CODEC_PCMU:
       rtp_encoder->type = PT_PCMU;
-      rtp_encoder->ssrc = SSRC_PCMU;
+      rtp_encoder->ssrc = config->audio_ssrc ? config->audio_ssrc : SSRC_PCMU;
+
+      if (config->audio_duration)
+			{
+				rtp_encoder->timestamp_increment = config->audio_duration * 8000 / 1000;
+			}
+			else
+			{
+				rtp_encoder->timestamp_increment = CONFIG_AUDIO_DURATION * 8000 / 1000;
+			}
+
       rtp_encoder->encode_func = rtp_encoder_encode_generic;
       break;
     case CODEC_OPUS:
       rtp_encoder->type = PT_OPUS;
-      rtp_encoder->ssrc = SSRC_OPUS;
+      rtp_encoder->ssrc = config->audio_ssrc ? config->audio_ssrc : SSRC_OPUS;
+
+      if (config->audio_duration)
+			{
+				rtp_encoder->timestamp_increment = config->audio_duration * 48000 / 1000;
+			}
+			else
+			{
+				rtp_encoder->timestamp_increment = CONFIG_AUDIO_DURATION * 48000 / 1000;
+			}
+
       rtp_encoder->encode_func = rtp_encoder_encode_generic;
       break;
     case CODEC_AAC:
       rtp_encoder->type = PT_AAC;
-      rtp_encoder->ssrc = SSRC_AAC;
+      rtp_encoder->ssrc = config->audio_ssrc ? config->audio_ssrc : SSRC_AAC;
+      rtp_encoder->timestamp_increment = 1024;
       rtp_encoder->encode_func = rtp_encoder_encode_aac;
       break;
     default:
@@ -382,7 +429,7 @@ static int rtp_decode_aac(RtpDecoder* rtp_decoder, uint8_t* buf, size_t size) {
   return (int)size;
 }
 
-void rtp_decoder_init(RtpDecoder* rtp_decoder, MediaCodec codec, RtpOnPacket on_packet, void* user_data) {
+void rtp_decoder_init(RtpDecoder* rtp_decoder, MediaCodec codec, RtpOnPacket on_packet, PeerConfiguration* config ,void* user_data) {
   rtp_decoder->on_packet = on_packet;
   rtp_decoder->user_data = user_data;
 

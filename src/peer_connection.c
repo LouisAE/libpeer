@@ -50,7 +50,7 @@ struct PeerConnection {
 static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  // ·µ»Ø´íÎóÂë
+  // ï¿½ï¿½ï¿½Ø´ï¿½ï¿½ï¿½ï¿½ï¿½
   return agent_send(&pc->agent, data, size); 
 }
 
@@ -165,57 +165,21 @@ PeerConnection* peer_connection_create(PeerConfiguration* config) {
 
   memset(&pc->sctp, 0, sizeof(pc->sctp));
 
+  // ä»¥ä¸‹å‡ ä¸ªå‡½æ•°éƒ½æ·»åŠ äº†PeerConfigurationä½œä¸ºè¾“å…¥å‚æ•°ï¼Œå¯ä»¥åœ¨å†…éƒ¨è‡ªå®šä¹‰ä¸€ä¸‹å‚æ•°
   if (pc->config.audio_codec) {
-  
-  // Ìí¼ÓÂß¼­£¬ÔÊĞíÓÃ»§ÉèÖÃÃ¿Ö¡ÒôÆµ³¤¶ÈºÍÊÓÆµÖ¡ÂÊ
-	switch(pc->config.audio_codec)
-	{
-		case CODEC_PCMA:
-		case CODEC_PCMU:
-			if (pc->config.audio_duration)
-			{
-				pc->artp_encoder.timestamp_increment = pc->config.audio_duration * 8000 / 1000;
-			}
-			else
-			{
-				pc->artp_encoder.timestamp_increment = CONFIG_AUDIO_DURATION * 8000 / 1000;
-			}
-			break;
-		case CODEC_OPUS:
-			if (pc->config.audio_duration)
-			{
-				pc->artp_encoder.timestamp_increment = pc->config.audio_duration * 48000 / 1000;
-			}
-			else
-			{
-				pc->artp_encoder.timestamp_increment = CONFIG_AUDIO_DURATION * 48000 / 1000;
-			}
-      break;
-    case CODEC_AAC:
-      pc->artp_encoder.timestamp_increment = 1024;
-			break;
-		default:
-		  break;
-	}
-
     rtp_encoder_init(&pc->artp_encoder, pc->config.audio_codec,
-                     peer_connection_outgoing_rtp_packet, (void*)pc);
+                     peer_connection_outgoing_rtp_packet, &pc->config,(void*)pc);
 
     rtp_decoder_init(&pc->artp_decoder, pc->config.audio_codec,
-                     pc->config.onaudiotrack, pc->config.user_data);
+                     pc->config.onaudiotrack, &pc->config, pc->config.user_data);
   }
 
   if (pc->config.video_codec) {
-    if (pc->config.video_frame_rate)
-    {
-      pc->vrtp_encoder.timestamp_increment = 90000 / (pc->config.video_frame_rate);
-    }
-
     rtp_encoder_init(&pc->vrtp_encoder, pc->config.video_codec,
-                     peer_connection_outgoing_rtp_packet, (void*)pc);
+                     peer_connection_outgoing_rtp_packet, &pc->config, (void*)pc);
 
     rtp_decoder_init(&pc->vrtp_decoder, pc->config.video_codec,
-                     pc->config.onvideotrack, pc->config.user_data);
+                     pc->config.onvideotrack, &pc->config, pc->config.user_data);
   }
 
   return pc;
