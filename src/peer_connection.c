@@ -28,7 +28,7 @@ struct PeerConnection {
 
   char sdp[CONFIG_SDP_BUFFER_SIZE];
 
-  void (*onicecandidate)(char* sdp, void* user_data);
+  int (*onicecandidate)(char* sdp, void* user_data);
   void (*oniceconnectionstatechange)(PeerConnectionState state, void* user_data);
   void (*on_connected)(void* userdata);
   void (*on_receiver_packet_loss)(float fraction_loss, uint32_t total_loss, void* user_data);
@@ -50,7 +50,6 @@ struct PeerConnection {
 static int peer_connection_outgoing_rtp_packet(uint8_t* data, size_t size, void* user_data) {
   PeerConnection* pc = (PeerConnection*)user_data;
   dtls_srtp_encrypt_rtp_packet(&pc->dtls_srtp, data, (int*)&size);
-  // ���ش�����
   return agent_send(&pc->agent, data, size); 
 }
 
@@ -503,7 +502,10 @@ static const char* peer_connection_create_sdp(PeerConnection* pc, SdpType sdp_ty
   sdp_append(pc->sdp, description);
 
   if (pc->onicecandidate) {
-    pc->onicecandidate(pc->sdp, pc->config.user_data);
+    if (pc->onicecandidate(pc->sdp, pc->config.user_data) != 0)
+    {
+      STATE_CHANGED(pc, PEER_CONNECTION_FAILED);
+    }
   }
 
   return pc->sdp;

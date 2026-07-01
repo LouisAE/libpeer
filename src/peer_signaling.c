@@ -470,7 +470,7 @@ static int peer_signaling_mqtt_subscribe(int subscribed) {
   return 0;
 }
 
-static void peer_signaling_onicecandidate(char* description, void* userdata) {
+static int peer_signaling_onicecandidate(char* description, void* userdata) {
   cJSON* res;
   char* payload;
   if (g_ps.id > 0) {
@@ -490,11 +490,12 @@ static void peer_signaling_onicecandidate(char* description, void* userdata) {
       char cred[TOKEN_MAX_LEN + 10];
       memset(cred, 0, sizeof(cred));
       snprintf(cred, sizeof(cred), "Bearer %s", g_ps.token);
-      peer_signaling_http_post(g_ps.host, g_ps.path, g_ps.port, cred, description);
+      return peer_signaling_http_post(g_ps.host, g_ps.path, g_ps.port, cred, description);
     } else {
-      peer_signaling_http_post(g_ps.host, g_ps.path, g_ps.port, "", description);
+      return peer_signaling_http_post(g_ps.host, g_ps.path, g_ps.port, "", description);
     }
   }
+  return 0;
 }
 
 int peer_signaling_connect(const char* url, const char* token, PeerConnection* pc) {
