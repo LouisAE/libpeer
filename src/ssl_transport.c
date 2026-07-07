@@ -49,6 +49,7 @@ int ssl_transport_connect(NetworkContext_t* net_ctx,
   const char* pers = "ssl_client";
   int ret;
   Address resolved_addr;
+  int reconnect_count = 0;
 
   mbedtls_ssl_init(&net_ctx->ssl);
   mbedtls_ssl_config_init(&net_ctx->conf);
@@ -108,6 +109,11 @@ int ssl_transport_connect(NetworkContext_t* net_ctx,
   while ((ret = mbedtls_ssl_handshake(&net_ctx->ssl)) != 0) {
     if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
       LOGE("ssl handshake error: -0x%x", (unsigned int)-ret);
+      reconnect_count++;
+      if (reconnect_count > 3)
+      {
+        return -1;
+      }
     }
   }
 
