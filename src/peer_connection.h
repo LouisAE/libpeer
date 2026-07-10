@@ -121,7 +121,7 @@ int peer_connection_datachannel_send_sid(PeerConnection* pc, char* message, size
 
 int peer_connection_send_audio(PeerConnection* pc, const uint8_t* packet, size_t bytes);
 
-int peer_connection_send_video(PeerConnection* pc, const uint8_t* packet, size_t bytes);
+int peer_connection_send_video(PeerConnection* pc, const uint8_t* packet, size_t bytes, uint32_t time_incr);
 
 void peer_connection_set_remote_description(PeerConnection* pc, const char* sdp, SdpType sdp_type);
 
@@ -146,7 +146,7 @@ void peer_connection_on_receiver_packet_loss(PeerConnection* pc,
  * @param A callback function to handle onicecandidate event.
  * @param A userdata which is pass to callback function.
  */
-void peer_connection_onicecandidate(PeerConnection* pc, void (*onicecandidate)(char* sdp_text, void* userdata));
+void peer_connection_onicecandidate(PeerConnection* pc, int (*onicecandidate)(char* sdp_text, void* userdata));
 
 /**
  * @brief Set the callback function to handle oniceconnectionstatechange event.
