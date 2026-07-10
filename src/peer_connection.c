@@ -206,11 +206,12 @@ int peer_connection_send_audio(PeerConnection* pc, const uint8_t* buf, size_t le
   return rtp_encoder_encode(&pc->artp_encoder, buf, len);
 }
 
-int peer_connection_send_video(PeerConnection* pc, const uint8_t* buf, size_t len) {
+int peer_connection_send_video(PeerConnection* pc, const uint8_t* buf, size_t len, uint32_t time_incr) {
   if (pc->state != PEER_CONNECTION_COMPLETED) {
     // LOGE("dtls_srtp not connected");
     return -1;
   }
+  pc->vrtp_encoder.timestamp_increment = time_incr;
   return rtp_encoder_encode(&pc->vrtp_encoder, buf, len);
 }
 
@@ -545,7 +546,7 @@ void peer_connection_on_receiver_packet_loss(PeerConnection* pc,
   pc->on_receiver_packet_loss = on_receiver_packet_loss;
 }
 
-void peer_connection_onicecandidate(PeerConnection* pc, void (*onicecandidate)(char* sdp, void* userdata)) {
+void peer_connection_onicecandidate(PeerConnection* pc, int (*onicecandidate)(char* sdp, void* userdata)) {
   pc->onicecandidate = onicecandidate;
 }
 
