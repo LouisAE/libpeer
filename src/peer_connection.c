@@ -12,6 +12,7 @@
 #include "rtp.h"
 #include "sctp.h"
 #include "sdp.h"
+#include "peer_cache_queue.h"
 
 #define STATE_CHANGED(pc, curr_state)                                 \
   if (pc->oniceconnectionstatechange && pc->state != curr_state) {    \
@@ -32,6 +33,7 @@ struct PeerConnection {
   void (*oniceconnectionstatechange)(PeerConnectionState state, void* user_data);
   void (*on_connected)(void* userdata);
   void (*on_receiver_packet_loss)(float fraction_loss, uint32_t total_loss, void* user_data);
+  void (*on_nack)(uint32_t ssrc, uint16_t* frames);
 
   uint8_t temp_buf[CONFIG_MTU];
   uint8_t agent_buf[CONFIG_MTU];
@@ -87,6 +89,7 @@ static int peer_connection_dtls_srtp_send(void* ctx, const uint8_t* buf, size_t 
 static void peer_connection_incoming_rtcp(PeerConnection* pc, uint8_t* buf, size_t len) {
   RtcpHeader* rtcp_header;
   size_t pos = 0;
+  int i = 0;
 
   while (pos < len) {
     rtcp_header = (RtcpHeader*)(buf + pos);
@@ -110,10 +113,86 @@ static void peer_connection_incoming_rtcp(PeerConnection* pc, uint8_t* buf, size
       case RTCP_PSFB: {
         int fmt = rtcp_header->rc;
         LOGD("RTCP_PSFB %d", fmt);
+
         // PLI and FIR
         if ((fmt == 1 || fmt == 4) && pc->config.on_request_keyframe) {
           pc->config.on_request_keyframe(pc->config.user_data);
         }
+        break;
+      }
+      case RTCP_RTPFB: {
+        static uint16_t last_timestamp = 0; // timestamp for last retransmit
+        static uint16_t last_seq = 0;       // sequence number for last retransmit
+        int fmt = rtcp_header->rc;        
+        //LOGD("header: %x", *((uint32_t*)rtcp_header));
+        RtcpFb* payload = (RtcpFb*)(buf + pos);
+        
+        uint32_t fci = 0;
+        uint32_t ssrc = 0;
+        uint16_t seq_num = 0;
+        uint16_t size = 0;
+        RtpEncoder* encoder = NULL;
+        uint8_t* pack = NULL;
+        
+        ssrc = ntohl(payload->media);
+
+        if (ssrc == pc->vrtp_encoder.ssrc)
+        {
+          encoder = &(pc->vrtp_encoder);
+        }
+        else if (ssrc == pc->artp_encoder.ssrc)
+        {
+          encoder = &(pc->artp_encoder);
+        }
+        else
+        {
+          break;
+        }
+
+        fci = ntohl(*((uint32_t*)(payload->fci)));
+        seq_num = (fci & 0xffff0000) >> 16;
+
+        // Must after 30 packets
+        if (seq_num == last_seq && \
+        (encoder->timestamp - last_timestamp) < 30 * encoder->timestamp_increment)
+        {
+          break;
+        }
+        int ret = 0;
+        // RTCP Feedback message type (FMT): 1 Generic negative acknowledgement (NACK)
+        // As specify in RFC 4585 Section 6.2, only fmt 1 is vaild
+        if (fmt == 1) 
+        {
+          //LOGI("RTCP_RTPFB: lost_frame=%d, fci=%d\n",lost_frame, fci);
+          size = peer_cache_queue_get(&(encoder->cache_queue), seq_num, &pack);
+          if (size > 0)
+          {
+            ret = rtp_encoder_retransmit(encoder, pack, size);
+            LOGD("Cache Hit: %d, size=%d return=%d", seq_num, size, ret);
+          }
+          else
+          {
+            //LOGD("Cache Miss %d", seq_num);
+          }
+
+          for (i = 1; i < 16; i++)
+          {
+            if (fci & (1 << i) == 1)
+            {
+              size = peer_cache_queue_get(&(encoder->cache_queue), seq_num, &pack);
+              if (size > 0)
+              {
+                ret = rtp_encoder_retransmit(encoder, pack, size);
+                LOGD("Cache Hit: %d, return=%d", seq_num, ret);
+              }
+              //LOGI("Also lost: %d\n", lost_frames[count - 1]);
+            }
+          }
+
+          last_timestamp = encoder->timestamp;
+          last_seq = seq_num;
+        }
+        break;
       }
       default:
         break;
@@ -593,4 +672,9 @@ int peer_connection_add_ice_candidate(PeerConnection* pc, char* candidate) {
   LOGD("Add candidate: %s", candidate);
   agent->remote_candidates_count++;
   return 0;
+}
+
+void peer_connection_on_nack(PeerConnection* pc, void (*on_nack)(uint32_t ssrc, uint16_t* nack))
+{
+  pc->on_nack = on_nack;
 }

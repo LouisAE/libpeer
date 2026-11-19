@@ -81,6 +81,8 @@ typedef struct PeerConfiguration {
   uint16_t audio_duration;
   uint32_t video_ssrc;
   uint32_t audio_ssrc;
+  uint8_t* cache_buf;
+  uint32_t cache_buf_size;
 
   void (*onaudiotrack)(uint8_t* data, size_t size, void* userdata);
   void (*onvideotrack)(uint8_t* data, size_t size, void* userdata);
@@ -168,6 +170,8 @@ void peer_connection_ondatachannel(PeerConnection* pc,
                                    void (*onmessage)(char* msg, size_t len, void* userdata, uint16_t sid),
                                    void (*onopen)(void* userdata),
                                    void (*onclose)(void* userdata));
+
+void peer_connection_on_nack(PeerConnection* pc, void (*on_nack)(uint32_t,uint16_t*));
 
 int peer_connection_lookup_sid(PeerConnection* pc, const char* label, uint16_t* sid);
 
