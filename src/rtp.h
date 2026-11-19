@@ -14,6 +14,7 @@
 
 #include "config.h"
 #include "peer_connection.h"
+#include "peer_cache_queue.h"
 
 typedef enum RtpPayloadType {
 
@@ -21,6 +22,7 @@ typedef enum RtpPayloadType {
   PT_PCMA = 8,
   PT_G722 = 9,
   PT_H264 = 96,
+  PT_VID_RTX = 102,
   PT_OPUS = 111,
   PT_AAC = 112
 
@@ -90,10 +92,12 @@ struct RtpEncoder {
   int (*encode_func)(RtpEncoder* rtp_encoder, uint8_t* data, size_t size);
   void* user_data;
   uint16_t seq_number;
+  uint16_t retransmit_seq_number;
   uint32_t ssrc;
   uint32_t timestamp;
   uint32_t timestamp_increment;
   uint8_t buf[CONFIG_MTU + 128];
+  PeerCacheQueue cache_queue;
 };
 
 int rtp_packet_validate(uint8_t* packet, size_t size);
@@ -102,6 +106,9 @@ int rtp_packet_validate(uint8_t* packet, size_t size);
 void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_packet, PeerConfiguration* config, void* user_data);
 
 int rtp_encoder_encode(RtpEncoder* rtp_encoder, const uint8_t* data, size_t size);
+
+// resend an rtp packet
+int rtp_encoder_retransmit(RtpEncoder* rtp_encoder, const uint8_t* data, size_t size);
 
 void rtp_decoder_init(RtpDecoder* rtp_decoder, MediaCodec codec, RtpOnPacket on_packet, PeerConfiguration* config, void* user_data);
 

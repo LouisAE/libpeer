@@ -6,6 +6,7 @@
 #include "peer_connection.h"
 #include "rtp.h"
 #include "utils.h"
+#include "peer_cache_queue.h"
 
 typedef enum RtpH264Type {
 
@@ -84,6 +85,7 @@ static int rtp_encoder_encode_h264_single(RtpEncoder* rtp_encoder, uint8_t* buf,
 #endif
 
   memcpy(rtp_packet->payload, buf, size);
+  peer_cache_queue_put(&(rtp_encoder->cache_queue), rtp_encoder->seq_number - 1, rtp_encoder->buf, size + sizeof(RtpHeader));
 
   return rtp_encoder->on_packet(rtp_encoder->buf, size + sizeof(RtpHeader), rtp_encoder->user_data);
 }
@@ -126,6 +128,7 @@ static int rtp_encoder_encode_h264_fu_a(RtpEncoder* rtp_encoder, uint8_t* buf, s
       fu_header->e = 1;
       rtp_packet->header.markerbit = 1;
       memcpy(rtp_packet->payload + sizeof(NaluHeader) + sizeof(FuHeader), buf, size);
+      peer_cache_queue_put(&(rtp_encoder->cache_queue), rtp_encoder->seq_number - 1, rtp_encoder->buf, size + sizeof(RtpHeader) + sizeof(NaluHeader) + sizeof(FuHeader));
       ret = rtp_encoder->on_packet(rtp_encoder->buf, size + sizeof(RtpHeader) + sizeof(NaluHeader) + sizeof(FuHeader), rtp_encoder->user_data);
       break;
     }
@@ -133,6 +136,7 @@ static int rtp_encoder_encode_h264_fu_a(RtpEncoder* rtp_encoder, uint8_t* buf, s
     fu_header->e = 0;
 
     memcpy(rtp_packet->payload + sizeof(NaluHeader) + sizeof(FuHeader), buf, FU_PAYLOAD_SIZE);
+    peer_cache_queue_put(&(rtp_encoder->cache_queue), rtp_encoder->seq_number - 1, rtp_encoder->buf, CONFIG_MTU);
     // 更改返回值
     ret = rtp_encoder->on_packet(rtp_encoder->buf, CONFIG_MTU, rtp_encoder->user_data);
     if (ret <= 0)
@@ -318,10 +322,38 @@ void rtp_encoder_init(RtpEncoder* rtp_encoder, MediaCodec codec, RtpOnPacket on_
     default:
       break;
   }
+
+  if (config->cache_buf != NULL)
+  {
+    peer_cache_queue_init(&(rtp_encoder->cache_queue), config->cache_buf, config->cache_buf_size);
+  }
 }
 
 int rtp_encoder_encode(RtpEncoder* rtp_encoder, const uint8_t* buf, size_t size) {
   return rtp_encoder->encode_func(rtp_encoder, (uint8_t*)buf, size);
+}
+
+int rtp_encoder_retransmit(RtpEncoder* rtp_encoder, const uint8_t* data, size_t size)
+{
+  RtpPacket* pack = (RtpPacket*)(rtp_encoder->buf);
+  uint16_t osn = 0;
+
+  memcpy(rtp_encoder->buf, data, sizeof(RtpHeader));
+  pack->header.type = PT_VID_RTX;
+  osn = ntohs(pack->header.seq_number);
+  pack->header.ssrc = htonl(rtp_encoder->ssrc + 1);
+
+  // osn
+  memcpy(pack->payload, &(pack->header.seq_number), sizeof(pack->header.seq_number));
+
+  pack->header.seq_number = htons(rtp_encoder->retransmit_seq_number++);
+
+  memcpy(pack->payload + 2, data + sizeof(RtpHeader), size - sizeof(RtpHeader));
+
+  //LOGD("Retransmit: version=%d\n, type=%d\n, seq_number=%d\n, timestamp=%d\n",
+     //pack->header.version, pack->header.type, ntohs(pack->header.seq_number), ntohl(pack->header.timestamp));
+  LOGI("Retransmit: %d with %d", osn, rtp_encoder->retransmit_seq_number - 1);
+  return rtp_encoder->on_packet((uint8_t*)pack, size + 2, rtp_encoder->user_data);
 }
 
 static int rtp_decode_h264(RtpDecoder* rtp_decoder, uint8_t* buf, size_t size) {

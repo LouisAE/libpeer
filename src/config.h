@@ -6,7 +6,7 @@
 
 #define SCTP_MTU (1200)
 // 从1300改为1500，防止aac拉流时出错
-#define CONFIG_MTU (1400) 
+#define CONFIG_MTU (1200) 
 
 #ifndef CONFIG_USE_LWIP
 #define CONFIG_USE_LWIP 0

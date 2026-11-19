@@ -28,16 +28,21 @@ void sdp_reset(char* sdp) {
 }
 
 void sdp_append_h264(char* sdp, uint32_t ssrc) {
-  sdp_append(sdp, "m=video 9 UDP/TLS/RTP/SAVPF 96");
+  sdp_append(sdp, "m=video 9 UDP/TLS/RTP/SAVPF 96 102");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
   sdp_append(sdp, "a=rtcp-fb:96 nack");
   sdp_append(sdp, "a=rtcp-fb:96 nack pli");
   sdp_append(sdp, "a=fmtp:96 profile-level-id=42e01f;level-asymmetry-allowed=1");
   sdp_append(sdp, "a=rtpmap:96 H264/90000");
+  sdp_append(sdp, "a=ssrc-group:FID %u %u", ssrc, ssrc + 1);
   sdp_append(sdp, "a=ssrc:%u cname:webrtc-h264", ssrc);
   sdp_append(sdp, "a=sendrecv");
   sdp_append(sdp, "a=mid:video");
   sdp_append(sdp, "a=rtcp-mux");
+  // retransmission
+  sdp_append(sdp, "a=ssrc:%u cname:webrtc-h264", ssrc + 1);
+  sdp_append(sdp, "a=rtpmap:102 rtx/90000");
+  sdp_append(sdp, "a=fmtp:102 apt=96;rtx-time=500");
 }
 
 void sdp_append_pcma(char* sdp, uint32_t ssrc) {
